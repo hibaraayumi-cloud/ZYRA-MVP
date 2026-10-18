@@ -3,11 +3,17 @@ import requests
 
 def get_weather_data():
 
+    latitude = 13.3611
+    longitude = 100.9847
+
     url = (
         "https://api.open-meteo.com/v1/forecast"
-        "?latitude=13.69"
-        "&longitude=100.08"
-        "&current=temperature_2m,relative_humidity_2m,precipitation"
+        f"?latitude={latitude}"
+        f"&longitude={longitude}"
+        "&current=temperature_2m,"
+        "relative_humidity_2m,"
+        "precipitation,"
+        "wind_speed_10m"
     )
 
     try:
@@ -29,7 +35,10 @@ def get_weather_data():
                 current["relative_humidity_2m"],
 
             "rain":
-                current["precipitation"]
+                current["precipitation"],
+
+            "wind":
+                current["wind_speed_10m"]
         }
 
     except:
