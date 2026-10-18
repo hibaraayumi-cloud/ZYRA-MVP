@@ -9,13 +9,14 @@ def calculate_score(
 
     score = 50
 
-    # ความสามารถในการทำกำไร
     profit = revenue - cost
 
     if revenue > 0:
         profit_margin = profit / revenue
     else:
         profit_margin = 0
+
+    # กำไร
 
     if profit_margin > 0.30:
         score += 20
@@ -48,11 +49,9 @@ def calculate_score(
     else:
         score -= 15
 
-    # ปัจจัยเฉพาะอุตสาหกรรม
-
     score += industry_value
 
     return max(
         0,
-        min(score, 100)
+        min(score,100)
     )
