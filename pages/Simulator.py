@@ -1,5 +1,9 @@
 import streamlit as st
 import plotly.graph_objects as go
+import pandas as pd
+
+from utils.history import load_history
+from utils.scoring import calculate_score
 
 st.set_page_config(
     page_title="Business Simulator",
@@ -10,151 +14,182 @@ st.set_page_config(
 st.title("🔮 เครื่องมือจำลองสถานการณ์ทางธุรกิจ")
 
 st.markdown("""
-ทดลองปรับตัวแปรทางธุรกิจเพื่อประเมินผลกระทบต่อ
-สุขภาพธุรกิจและระดับความเสี่ยง
-
-ช่วยสนับสนุนการตัดสินใจก่อนดำเนินการจริง
+ทดลองปรับตัวแปรทางธุรกิจ
+เพื่อประเมินผลกระทบก่อนตัดสินใจจริง
 """)
 
-st.markdown("---")
+# =====================================
+# LOAD DATA
+# =====================================
+
+df = load_history()
+
+if df.empty:
+
+    st.warning(
+        """
+ยังไม่มีข้อมูลการวิเคราะห์
+
+กรุณาไปที่เมนู Risk Analysis
+และวิเคราะห์ธุรกิจอย่างน้อย 1 ครั้ง
+"""
+    )
+
+    st.stop()
+
+latest = df.iloc[-1]
+
+business_type = latest["business_type"]
+
+revenue = float(latest["revenue"])
+
+cost = float(latest["cost"])
+
+cash = float(latest["cash"])
+
+growth = float(latest["growth"])
 
 # =====================================
 # CURRENT STATE
 # =====================================
 
-st.subheader("สถานการณ์ปัจจุบัน")
+st.subheader("📊 ข้อมูลปัจจุบัน")
 
-current_revenue = st.number_input(
-    "รายได้ปัจจุบัน (บาท)",
-    value=100000
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric(
+    "รายได้",
+    f"{revenue:,.0f}"
 )
 
-current_cost = st.number_input(
-    "ต้นทุนปัจจุบัน (บาท)",
-    value=70000
+c2.metric(
+    "ต้นทุน",
+    f"{cost:,.0f}"
 )
 
-current_growth = st.slider(
-    "การเติบโตของลูกค้า (%)",
-    -50,
-    50,
-    10
+c3.metric(
+    "เงินสดสำรอง",
+    f"{cash:,.0f}"
 )
+
+c4.metric(
+    "การเติบโต",
+    f"{growth:.0f}%"
+)
+
+# =====================================
+# SCENARIO
+# =====================================
 
 st.markdown("---")
 
-# =====================================
-# SCENARIO INPUT
-# =====================================
-
-st.subheader("จำลองสถานการณ์")
+st.subheader("⚙️ จำลองสถานการณ์")
 
 revenue_change = st.slider(
-    "เปลี่ยนแปลงรายได้ (%)",
+    "ปรับรายได้ (%)",
     -50,
     100,
     10
 )
 
 cost_change = st.slider(
-    "เปลี่ยนแปลงต้นทุน (%)",
+    "ปรับต้นทุน (%)",
     -50,
     100,
     0
 )
 
 growth_change = st.slider(
-    "เปลี่ยนแปลงการเติบโตของลูกค้า (%)",
+    "ปรับการเติบโตของลูกค้า (%)",
     -50,
     100,
     0
 )
 
 # =====================================
-# CALCULATION
+# NEW VALUES
 # =====================================
 
-new_revenue = current_revenue * (1 + revenue_change / 100)
+new_revenue = revenue * (
+    1 + revenue_change / 100
+)
 
-new_cost = current_cost * (1 + cost_change / 100)
+new_cost = cost * (
+    1 + cost_change / 100
+)
 
-new_growth = current_growth + growth_change
+new_growth = growth + growth_change
 
-profit = new_revenue - new_cost
+industry_value = 0
 
-# =====================================
-# HEALTH SCORE
-# =====================================
+sim_score = calculate_score(
+    new_revenue,
+    new_cost,
+    cash,
+    new_growth,
+    business_type,
+    industry_value
+)
 
-score = 50
-
-if profit > 0:
-    score += 20
-else:
-    score -= 15
-
-if new_growth > 10:
-    score += 15
-elif new_growth > 0:
-    score += 10
-else:
-    score -= 10
-
-profit_margin = profit / new_revenue if new_revenue > 0 else 0
-
-if profit_margin > 0.30:
-    score += 15
-
-elif profit_margin > 0.10:
-    score += 10
-
-score = max(0, min(score, 100))
+new_profit = new_revenue - new_cost
 
 # =====================================
-# RESULTS
+# RESULT
 # =====================================
 
 st.markdown("---")
 
-st.subheader("📊 ผลการจำลอง")
+st.subheader("📈 ผลการจำลอง")
 
-c1, c2, c3 = st.columns(3)
+r1, r2, r3 = st.columns(3)
 
-c1.metric(
+r1.metric(
     "รายได้ใหม่",
     f"{new_revenue:,.0f}",
     f"{revenue_change}%"
 )
 
-c2.metric(
+r2.metric(
     "ต้นทุนใหม่",
     f"{new_cost:,.0f}",
     f"{cost_change}%"
 )
 
-c3.metric(
+r3.metric(
     "กำไรใหม่",
-    f"{profit:,.0f}"
+    f"{new_profit:,.0f}"
 )
 
 # =====================================
-# SCORE GAUGE
+# SCORE
 # =====================================
 
 fig = go.Figure(go.Indicator(
     mode="gauge+number",
-    value=score,
+    value=sim_score,
     title={
-        "text": "คะแนนสุขภาพธุรกิจหลังปรับแผน"
+        "text":"คะแนนสุขภาพธุรกิจหลังปรับแผน"
     },
     gauge={
-        "axis": {"range": [0, 100]},
-        "bar": {"color": "#0B8457"},
-        "steps": [
-            {"range": [0, 40], "color": "#dc3545"},
-            {"range": [40, 60], "color": "#fd7e14"},
-            {"range": [60, 80], "color": "#ffc107"},
-            {"range": [80, 100], "color": "#198754"}
+        "axis":{"range":[0,100]},
+        "bar":{"color":"#0B8457"},
+        "steps":[
+            {
+                "range":[0,40],
+                "color":"#dc3545"
+            },
+            {
+                "range":[40,60],
+                "color":"#fd7e14"
+            },
+            {
+                "range":[60,80],
+                "color":"#ffc107"
+            },
+            {
+                "range":[80,100],
+                "color":"#198754"
+            }
         ]
     }
 ))
@@ -165,32 +200,66 @@ st.plotly_chart(
 )
 
 # =====================================
-# INTERPRETATION
+# COMPARISON
+# =====================================
+
+st.markdown("---")
+
+st.subheader("📊 เปรียบเทียบก่อนและหลัง")
+
+compare_df = pd.DataFrame({
+
+    "รายการ":[
+        "รายได้",
+        "ต้นทุน",
+        "การเติบโต"
+    ],
+
+    "ปัจจุบัน":[
+        revenue,
+        cost,
+        growth
+    ],
+
+    "หลังจำลอง":[
+        new_revenue,
+        new_cost,
+        new_growth
+    ]
+})
+
+st.dataframe(
+    compare_df,
+    use_container_width=True
+)
+
+# =====================================
+# SUMMARY
 # =====================================
 
 st.markdown("---")
 
 st.subheader("📋 ผลการประเมิน")
 
-if score >= 80:
+if sim_score >= 80:
 
     st.success(
         """
-สถานการณ์จำลองแสดงให้เห็นว่าธุรกิจอยู่ในทิศทางที่ดี
+สถานการณ์จำลองสะท้อนว่าธุรกิจมีแนวโน้มแข็งแรงขึ้น
 
-การเปลี่ยนแปลงที่กำหนดช่วยเพิ่มศักยภาพในการเติบโต
-และลดความเสี่ยงโดยรวมของธุรกิจ
+สามารถพิจารณาขยายธุรกิจ
+หรือดำเนินกลยุทธ์เชิงรุกได้
 """
     )
 
-elif score >= 60:
+elif sim_score >= 60:
 
     st.warning(
         """
-ธุรกิจมีแนวโน้มคงที่
+สถานการณ์จำลองยังอยู่ในระดับปกติ
 
-ควรติดตามผลกระทบของรายได้ ต้นทุน
-และการเติบโตของลูกค้าอย่างต่อเนื่อง
+ควรติดตามต้นทุนและการเติบโต
+อย่างใกล้ชิด
 """
     )
 
@@ -200,8 +269,7 @@ else:
         """
 สถานการณ์จำลองสะท้อนถึงความเสี่ยงที่เพิ่มขึ้น
 
-ควรทบทวนแผนการดำเนินงานก่อนตัดสินใจลงทุน
-หรือขยายธุรกิจ
+ควรทบทวนกลยุทธ์ก่อนดำเนินการจริง
 """
     )
 
@@ -215,24 +283,34 @@ st.subheader("💡 ข้อเสนอแนะ")
 
 if revenue_change > 0:
 
-    st.write(
-        "✅ การเพิ่มรายได้ส่งผลบวกต่อคะแนนสุขภาพธุรกิจ"
+    st.success(
+        "การเพิ่มรายได้ส่งผลบวกต่อคะแนนสุขภาพธุรกิจ"
     )
 
 if cost_change > 20:
 
-    st.write(
-        "⚠ ต้นทุนเพิ่มขึ้นในระดับสูง อาจส่งผลต่อกำไร"
+    st.warning(
+        "ต้นทุนเพิ่มขึ้นในระดับสูง อาจส่งผลต่อความสามารถในการทำกำไร"
     )
 
 if new_growth < 0:
 
-    st.write(
-        "⚠ ควรจัดทำกิจกรรมรักษาฐานลูกค้า"
+    st.warning(
+        "ควรวางแผนรักษาฐานลูกค้าอย่างจริงจัง"
     )
 
-if score >= 80:
+if sim_score >= 80:
 
-    st.write(
-        "✅ สามารถพิจารณาขยายธุรกิจได้"
+    st.success(
+        "สถานการณ์ดังกล่าวสามารถใช้เป็นแนวทางในการวางแผนธุรกิจได้"
     )
+
+# =====================================
+# FOOTER
+# =====================================
+
+st.markdown("---")
+
+st.caption(
+    "ZYRA Business Simulator | Scenario Planning Module"
+)
