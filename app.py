@@ -62,3 +62,41 @@ if st.button("Analyze"):
         st.warning("Moderate Risk")
     else:
         st.error("High Risk")
+st.markdown("---")
+
+st.subheader("⚠️ Early Warning")
+
+risk_found = False
+
+if growth < 0:
+    st.error("Customer growth is declining")
+    risk_found = True
+
+if cash < revenue * 0.3:
+    st.error("Cash flow risk detected")
+    risk_found = True
+
+if revenue < cost:
+    st.error("Business is operating at a loss")
+    risk_found = True
+
+if not risk_found:
+    st.success("No significant risk detected")
+
+
+st.markdown("---")
+
+st.subheader("💡 ZYRA Recommendations")
+
+if growth < 0:
+    st.write("✅ Improve customer retention programs")
+
+if cash < revenue * 0.3:
+    st.write("✅ Increase cash reserve")
+
+if revenue < cost:
+    st.write("✅ Review pricing strategy and reduce operating costs")
+
+if not risk_found:
+    st.write("✅ Continue current strategy and monitor performance")
+    
