@@ -1,43 +1,51 @@
 import streamlit as st
 import plotly.graph_objects as go
 
+from utils.scoring import calculate_score
+from utils.recommendation import get_recommendations
+from utils.history import save_analysis
+
 st.set_page_config(
-    page_title="ZYRA Risk Analysis",
+    page_title="Risk Analysis",
     page_icon="⚠️",
     layout="wide"
 )
+
+# =====================================
+# HEADER
+# =====================================
 
 st.title("⚠️ การวิเคราะห์ความเสี่ยงทางธุรกิจ")
 
 st.markdown("""
 ประเมินสุขภาพธุรกิจ ความเสี่ยง และโอกาสในการเติบโต
-โดยอาศัยข้อมูลทางการเงิน การตลาด และปัจจัยเฉพาะอุตสาหกรรม
+จากข้อมูลทางการเงิน การตลาด และปัจจัยเฉพาะอุตสาหกรรม
 """)
 
-# ==========================================
+# =====================================
 # BUSINESS TYPE
-# ==========================================
+# =====================================
 
 business_type = st.selectbox(
     "ประเภทธุรกิจ",
     [
-        "ค้าปลีก (Retail)",
-        "ร้านอาหาร (Restaurant)",
-        "เกษตรกรรม (Agriculture)"
+        "Retail",
+        "Restaurant",
+        "Agriculture"
     ]
 )
 
 st.markdown("---")
 
-# ==========================================
-# INDUSTRY INPUT
-# ==========================================
+# =====================================
+# INDUSTRY INPUTS
+# =====================================
 
-industry_score = 0
+industry_value = 0
 
-if "Restaurant" in business_type:
+if business_type == "Restaurant":
 
-    st.subheader("🍽 ข้อมูลเฉพาะธุรกิจร้านอาหาร")
+    st.subheader("🍽 ตัวชี้วัดธุรกิจร้านอาหาร")
 
     food_cost = st.slider(
         "ต้นทุนวัตถุดิบ (%)",
@@ -47,31 +55,31 @@ if "Restaurant" in business_type:
     )
 
     if food_cost < 35:
-        industry_score += 10
+        industry_value += 10
 
     elif food_cost > 55:
-        industry_score -= 10
+        industry_value -= 10
 
-elif "Retail" in business_type:
+elif business_type == "Retail":
 
-    st.subheader("🏪 ข้อมูลเฉพาะธุรกิจค้าปลีก")
+    st.subheader("🏪 ตัวชี้วัดธุรกิจค้าปลีก")
 
     inventory_turnover = st.slider(
-        "อัตราหมุนเวียนสินค้า",
+        "อัตราการหมุนเวียนสินค้า",
         1,
         20,
         8
     )
 
     if inventory_turnover > 10:
-        industry_score += 10
+        industry_value += 10
 
     elif inventory_turnover < 5:
-        industry_score -= 10
+        industry_value -= 10
 
-elif "Agriculture" in business_type:
+elif business_type == "Agriculture":
 
-    st.subheader("🌾 ข้อมูลเฉพาะธุรกิจเกษตร")
+    st.subheader("🌾 ตัวชี้วัดธุรกิจเกษตรกรรม")
 
     crop_price_trend = st.slider(
         "แนวโน้มราคาพืชผล (%)",
@@ -81,29 +89,32 @@ elif "Agriculture" in business_type:
     )
 
     if crop_price_trend > 10:
-        industry_score += 10
+        industry_value += 10
 
     elif crop_price_trend < -10:
-        industry_score -= 10
+        industry_value -= 10
 
-# ==========================================
-# BUSINESS INPUT
-# ==========================================
+# =====================================
+# BUSINESS INFORMATION
+# =====================================
 
-st.markdown("## ข้อมูลพื้นฐานทางธุรกิจ")
+st.markdown("## ข้อมูลทางธุรกิจ")
 
 revenue = st.number_input(
     "รายได้เฉลี่ยต่อเดือน (บาท)",
+    min_value=0,
     value=100000
 )
 
 cost = st.number_input(
     "ต้นทุนเฉลี่ยต่อเดือน (บาท)",
+    min_value=0,
     value=70000
 )
 
 cash = st.number_input(
     "เงินสดสำรอง (บาท)",
+    min_value=0,
     value=50000
 )
 
@@ -114,111 +125,91 @@ growth = st.slider(
     10
 )
 
-# ==========================================
-# FORMULA
-# ==========================================
+# =====================================
+# FORMULA EXPLANATION
+# =====================================
 
 with st.expander("ℹ วิธีการประเมินคะแนน"):
 
     st.markdown("""
-คะแนนสุขภาพธุรกิจคำนวณจาก
+### องค์ประกอบของคะแนนสุขภาพธุรกิจ
 
-- ความสามารถในการทำกำไร (40%)
-- สภาพคล่องทางการเงิน (30%)
-- การเติบโตของลูกค้า (20%)
-- ปัจจัยเฉพาะอุตสาหกรรม (10%)
+- ความสามารถในการทำกำไร
+- สภาพคล่องทางการเงิน
+- การเติบโตของลูกค้า
+- ปัจจัยเฉพาะอุตสาหกรรม
 
-ยิ่งคะแนนสูง ยิ่งแสดงถึงความแข็งแรงและความพร้อมในการเติบโต
+คะแนนยิ่งสูง ยิ่งสะท้อนถึงความแข็งแรงของธุรกิจ
 """)
 
-# ==========================================
+# =====================================
 # ANALYZE
-# ==========================================
+# =====================================
 
 if st.button("🚀 วิเคราะห์ธุรกิจ"):
 
-    score = 50
+    score = calculate_score(
+        revenue,
+        cost,
+        cash,
+        growth,
+        business_type,
+        industry_value
+    )
+
+    save_analysis(
+        business_type,
+        revenue,
+        cost,
+        cash,
+        growth,
+        score
+    )
 
     profit = revenue - cost
 
-    if revenue > 0:
-        profit_margin = profit / revenue
-    else:
-        profit_margin = 0
-
-    # Profitability
-
-    if profit_margin > 0.30:
-        score += 20
-
-    elif profit_margin > 0.10:
-        score += 10
-
-    else:
-        score -= 10
-
-    # Liquidity
-
-    if cash > revenue:
-        score += 15
-
-    elif cash > revenue * 0.5:
-        score += 10
-
-    elif cash < revenue * 0.3:
-        score -= 15
-
-    # Growth
-
-    if growth > 10:
-        score += 15
-
-    elif growth > 0:
-        score += 10
-
-    else:
-        score -= 15
-
-    score += industry_score
-
-    score = max(0, min(score, 100))
-
     # =====================================
-    # OVERVIEW
+    # KPI SNAPSHOT
     # =====================================
 
     st.markdown("---")
 
-    c1, c2, c3 = st.columns(3)
+    st.subheader("📊 ตัวชี้วัดสำคัญ")
 
-    c1.metric(
+    k1, k2, k3 = st.columns(3)
+
+    k1.metric(
         "รายได้",
-        f"{revenue:,.0f}"
+        f"{revenue:,.0f} บาท"
     )
 
-    c2.metric(
+    k2.metric(
         "กำไร",
-        f"{profit:,.0f}"
+        f"{profit:,.0f} บาท"
     )
 
-    c3.metric(
+    k3.metric(
         "การเติบโต",
         f"{growth}%"
     )
 
     # =====================================
-    # SCORE
+    # HEALTH INDEX
     # =====================================
+
+    st.markdown("---")
 
     st.subheader("📈 ดัชนีสุขภาพธุรกิจ")
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=score,
-        title={"text":"Business Health Index"},
+        title={
+            "text":"Business Health Index"
+        },
         gauge={
-            "axis":{"range":[0,100]},
-            "bar":{"color":"#0B8457"},
+            "axis": {"range":[0,100]},
+            "bar": {"color":"#0B8457"},
             "steps":[
                 {"range":[0,40],"color":"#dc3545"},
                 {"range":[40,60],"color":"#fd7e14"},
@@ -237,11 +228,15 @@ if st.button("🚀 วิเคราะห์ธุรกิจ"):
     # RISK LEVEL
     # =====================================
 
+    st.subheader("🎯 ระดับความเสี่ยงโดยรวม")
+
     if score >= 80:
 
         st.success(
             "🟢 ระดับความเสี่ยงต่ำ"
         )
+
+        level = "LOW"
 
     elif score >= 60:
 
@@ -249,42 +244,54 @@ if st.button("🚀 วิเคราะห์ธุรกิจ"):
             "🟠 ระดับความเสี่ยงปานกลาง"
         )
 
+        level = "MEDIUM"
+
     else:
 
         st.error(
             "🔴 ระดับความเสี่ยงสูง"
         )
 
+        level = "HIGH"
+
     # =====================================
     # ROOT CAUSE
     # =====================================
 
     st.markdown("---")
-    st.subheader("🔍 สาเหตุสำคัญที่พบ")
 
-    found = False
+    st.subheader("🔍 ปัจจัยที่ต้องติดตาม")
+
+    issue_found = False
 
     if cash < revenue * 0.3:
-        found = True
-        st.write(
-            "• เงินสดสำรองต่ำกว่าระดับที่แนะนำ"
+
+        st.warning(
+            "เงินสดสำรองต่ำกว่าระดับที่แนะนำ"
         )
+
+        issue_found = True
 
     if revenue < cost:
-        found = True
-        st.write(
-            "• ต้นทุนสูงกว่ารายได้"
+
+        st.warning(
+            "ต้นทุนสูงกว่ารายได้"
         )
+
+        issue_found = True
 
     if growth < 0:
-        found = True
-        st.write(
-            "• การเติบโตของลูกค้าลดลง"
+
+        st.warning(
+            "ลูกค้ามีแนวโน้มลดลง"
         )
 
-    if not found:
-        st.write(
-            "• ไม่พบความเสี่ยงสำคัญในปัจจุบัน"
+        issue_found = True
+
+    if not issue_found:
+
+        st.success(
+            "ยังไม่พบปัจจัยเสี่ยงที่สำคัญ"
         )
 
     # =====================================
@@ -295,24 +302,18 @@ if st.button("🚀 วิเคราะห์ธุรกิจ"):
 
     st.subheader("💡 แนวทางที่แนะนำ")
 
-    if growth < 0:
-        st.write(
-            "✅ เพิ่มกิจกรรมรักษาฐานลูกค้าเดิมและสร้างการกลับมาซื้อซ้ำ"
-        )
+    recommendations = get_recommendations(
+        revenue,
+        cost,
+        cash,
+        growth
+    )
 
-    if cash < revenue * 0.3:
-        st.write(
-            "✅ เพิ่มสภาพคล่องและเงินสดสำรอง"
-        )
+    for rec in recommendations:
 
-    if revenue < cost:
         st.write(
-            "✅ ทบทวนต้นทุนและปรับกลยุทธ์ราคา"
-        )
-
-    if not found:
-        st.write(
-            "✅ ดำเนินธุรกิจตามแผนปัจจุบันและติดตามผลอย่างต่อเนื่อง"
+            "✅",
+            rec
         )
 
     # =====================================
@@ -323,22 +324,22 @@ if st.button("🚀 วิเคราะห์ธุรกิจ"):
 
     st.subheader("📋 สรุปสถานะธุรกิจ")
 
-    if score >= 80:
+    if level == "LOW":
 
         st.success("""
 ธุรกิจมีผลการดำเนินงานอยู่ในระดับดี
 
-มีความสามารถในการทำกำไรและสภาพคล่องทางการเงินที่เหมาะสม
-ควรติดตามผลอย่างต่อเนื่องและสร้างโอกาสการเติบโตเพิ่มเติม
+มีสภาพคล่องทางการเงินที่เหมาะสม
+และสามารถเติบโตต่อได้ภายใต้การติดตามผลอย่างต่อเนื่อง
 """)
 
-    elif score >= 60:
+    elif level == "MEDIUM":
 
         st.warning("""
-ธุรกิจสามารถดำเนินงานได้ตามปกติ
+ธุรกิจยังสามารถดำเนินงานได้ตามปกติ
 
-แต่ควรเฝ้าระวังความเสี่ยงบางประการ
-และมีแผนรองรับล่วงหน้า
+แต่ควรเฝ้าระวังและจัดการความเสี่ยงบางประการ
+เพื่อป้องกันผลกระทบในระยะยาว
 """)
 
     else:
@@ -346,6 +347,16 @@ if st.button("🚀 วิเคราะห์ธุรกิจ"):
         st.error("""
 ธุรกิจมีความเสี่ยงในระดับสูง
 
-ควรเร่งปรับปรุงด้านการเงิน การตลาด
+ควรปรับปรุงด้านการเงิน การตลาด
 หรือการดำเนินงานโดยเร็ว
 """)
+
+    # =====================================
+    # SAVE CONFIRMATION
+    # =====================================
+
+    st.markdown("---")
+
+    st.success(
+        "✅ บันทึกผลการวิเคราะห์ลงระบบเรียบร้อยแล้ว"
+    )
