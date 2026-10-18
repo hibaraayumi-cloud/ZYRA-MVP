@@ -1,24 +1,39 @@
 import streamlit as st
+import pandas as pd
 
 st.title("📊 Dashboard")
 
-st.subheader("ภาพรวมธุรกิจ")
-
-st.metric(
-    "Business Health Index",
-    "82/100"
+st.subheader(
+    "ภาพรวมผลการวิเคราะห์ธุรกิจ"
 )
 
-st.success(
-    "สถานะธุรกิจอยู่ในเกณฑ์ดี"
-)
+try:
 
-st.markdown(
-"""
-### สิ่งที่ต้องติดตาม
+    df = pd.read_csv(
+        "data/analysis_history.csv"
+    )
 
-- สภาพคล่องทางการเงิน
-- การเติบโตของลูกค้า
-- ความสามารถในการทำกำไร
-"""
-)
+    if len(df) > 0:
+
+        latest_score = df.iloc[-1]["score"]
+
+        st.metric(
+            "Business Health Index",
+            f"{latest_score}/100"
+        )
+
+        st.line_chart(
+            df["score"]
+        )
+
+    else:
+
+        st.info(
+            "ยังไม่มีประวัติการวิเคราะห์"
+        )
+
+except:
+
+    st.info(
+        "ยังไม่มีข้อมูล"
+    )
