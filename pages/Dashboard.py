@@ -3,10 +3,6 @@ import pandas as pd
 
 st.title("📊 Dashboard")
 
-st.subheader(
-    "ภาพรวมผลการวิเคราะห์ธุรกิจ"
-)
-
 try:
 
     df = pd.read_csv(
@@ -15,25 +11,20 @@ try:
 
     if len(df) > 0:
 
-        latest_score = df.iloc[-1]["score"]
+        last_score = df.iloc[-1]["score"]
 
         st.metric(
             "Business Health Index",
-            f"{latest_score}/100"
+            f"{last_score}/100"
+        )
+
+        st.subheader(
+            "แนวโน้มคะแนนย้อนหลัง"
         )
 
         st.line_chart(
             df["score"]
         )
 
-    else:
-
-        st.info(
-            "ยังไม่มีประวัติการวิเคราะห์"
-        )
-
-except:
-
-    st.info(
-        "ยังไม่มีข้อมูล"
-    )
+        st.subheader(
+            "ประวัติการ
