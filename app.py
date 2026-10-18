@@ -1,9 +1,9 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-# ==========================================
+# =====================================
 # PAGE CONFIG
-# ==========================================
+# =====================================
 
 st.set_page_config(
     page_title="ZYRA",
@@ -11,25 +11,52 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================================
+# =====================================
+# SIDEBAR
+# =====================================
+
+st.sidebar.title("📈 ZYRA")
+
+st.sidebar.caption(
+    "Business Health Intelligence Platform"
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.info(
+"""
+ระบบวิเคราะห์สุขภาพธุรกิจ
+และความเสี่ยงเชิงธุรกิจ
+สำหรับผู้ประกอบการ SME
+"""
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.success("เวอร์ชัน 2.0")
+
+# =====================================
 # HEADER
-# ==========================================
+# =====================================
 
 st.title("📈 ZYRA")
-st.subheader(
-    "SME Early Warning & Survival Intelligence Platform"
-)
 
-st.info(
-    "Transform Business Data into Proactive Risk Signals"
-)
+st.markdown("""
+### ระบบวิเคราะห์สุขภาพธุรกิจและสัญญาณเตือนความเสี่ยงสำหรับ SME
 
-# ==========================================
+ZYRA ช่วยประเมินสถานะทางธุรกิจ วิเคราะห์ความเสี่ยง
+และเสนอแนวทางดำเนินการเบื้องต้นจากข้อมูลธุรกิจ
+เพื่อสนับสนุนการตัดสินใจของผู้ประกอบการ
+""")
+
+st.markdown("---")
+
+# =====================================
 # BUSINESS TYPE
-# ==========================================
+# =====================================
 
 business_type = st.selectbox(
-    "Select Business Type",
+    "ประเภทธุรกิจ",
     [
         "Retail",
         "Restaurant",
@@ -37,20 +64,39 @@ business_type = st.selectbox(
     ]
 )
 
-st.markdown("---")
+# =====================================
+# GUIDE
+# =====================================
 
-# ==========================================
+with st.expander("ℹ วิธีคำนวณคะแนน"):
+
+    st.markdown("""
+คะแนนสุขภาพธุรกิจ (Business Health Index)
+
+ประกอบด้วย
+
+- ความสามารถในการทำกำไร 40%
+- สภาพคล่องทางการเงิน 30%
+- การเติบโตของลูกค้า 20%
+- ปัจจัยเฉพาะอุตสาหกรรม 10%
+
+คะแนนยิ่งสูง แสดงถึงความแข็งแรงของธุรกิจ
+""")
+
+# =====================================
 # INDUSTRY INPUT
-# ==========================================
+# =====================================
+
+st.markdown("---")
 
 industry_bonus = 0
 
 if business_type == "Restaurant":
 
-    st.subheader("🍽 Restaurant Indicators")
+    st.subheader("🍽 ตัวชี้วัดธุรกิจร้านอาหาร")
 
     food_cost = st.slider(
-        "Food Cost (%)",
+        "สัดส่วนต้นทุนวัตถุดิบ (%)",
         20,
         80,
         35
@@ -58,10 +104,10 @@ if business_type == "Restaurant":
 
 elif business_type == "Retail":
 
-    st.subheader("🏪 Retail Indicators")
+    st.subheader("🏪 ตัวชี้วัดธุรกิจค้าปลีก")
 
     inventory_turnover = st.slider(
-        "Inventory Turnover",
+        "อัตราการหมุนเวียนสินค้า",
         1,
         20,
         8
@@ -69,57 +115,53 @@ elif business_type == "Retail":
 
 elif business_type == "Agriculture":
 
-    st.subheader("🌾 Agriculture Indicators")
+    st.subheader("🌾 ตัวชี้วัดธุรกิจเกษตร")
 
     crop_price_trend = st.slider(
-        "Crop Price Trend (%)",
+        "แนวโน้มราคาพืชผล (%)",
         -30,
         30,
         0
     )
 
-# ==========================================
-# BUSINESS DATA
-# ==========================================
+# =====================================
+# INPUTS
+# =====================================
 
-st.markdown("## Business Information")
+st.markdown("## ข้อมูลธุรกิจ")
 
 revenue = st.number_input(
-    "Monthly Revenue (THB)",
+    "รายได้เฉลี่ยต่อเดือน (บาท)",
     min_value=0,
     value=100000
 )
 
 cost = st.number_input(
-    "Monthly Cost (THB)",
+    "ต้นทุนเฉลี่ยต่อเดือน (บาท)",
     min_value=0,
     value=70000
 )
 
 cash = st.number_input(
-    "Cash Reserve (THB)",
+    "เงินสดสำรองสำหรับดำเนินธุรกิจ (บาท)",
     min_value=0,
     value=50000
 )
 
 growth = st.slider(
-    "Customer Growth (%)",
+    "อัตราการเติบโตของลูกค้า (%)",
     -50,
     50,
     10
 )
 
-# ==========================================
+# =====================================
 # ANALYZE
-# ==========================================
+# =====================================
 
-if st.button("🚀 Analyze Business"):
+if st.button("🚀 วิเคราะห์ธุรกิจ"):
 
     score = 50
-
-    # -------------------------
-    # Profitability
-    # -------------------------
 
     profit = revenue - cost
 
@@ -127,6 +169,10 @@ if st.button("🚀 Analyze Business"):
         profit_margin = profit / revenue
     else:
         profit_margin = 0
+
+    # ------------------------
+    # PROFITABILITY
+    # ------------------------
 
     if profit_margin > 0.30:
         score += 20
@@ -137,9 +183,9 @@ if st.button("🚀 Analyze Business"):
     else:
         score -= 10
 
-    # -------------------------
-    # Cash Flow
-    # -------------------------
+    # ------------------------
+    # LIQUIDITY
+    # ------------------------
 
     if cash > revenue:
         score += 15
@@ -150,9 +196,9 @@ if st.button("🚀 Analyze Business"):
     elif cash < revenue * 0.3:
         score -= 15
 
-    # -------------------------
-    # Customer Growth
-    # -------------------------
+    # ------------------------
+    # CUSTOMER GROWTH
+    # ------------------------
 
     if growth > 10:
         score += 15
@@ -163,9 +209,9 @@ if st.button("🚀 Analyze Business"):
     else:
         score -= 15
 
-    # -------------------------
-    # Industry Logic
-    # -------------------------
+    # ------------------------
+    # INDUSTRY LOGIC
+    # ------------------------
 
     if business_type == "Restaurant":
 
@@ -193,36 +239,50 @@ if st.button("🚀 Analyze Business"):
 
     score = max(0, min(score, 100))
 
-    # ==========================================
+    # =====================================
     # KPI SNAPSHOT
-    # ==========================================
+    # =====================================
 
     st.markdown("---")
-    st.subheader("📊 KPI Snapshot")
+    st.subheader("📊 ภาพรวมตัวชี้วัด")
 
     k1, k2, k3 = st.columns(3)
 
     k1.metric(
-        "Revenue",
+        "รายได้",
         f"{revenue:,.0f}"
     )
 
     k2.metric(
-        "Profit",
+        "กำไร",
         f"{profit:,.0f}"
     )
 
     k3.metric(
-        "Growth %",
+        "การเติบโตของลูกค้า",
         f"{growth}%"
     )
 
-    # ==========================================
-    # RISK DASHBOARD
-    # ==========================================
+    # =====================================
+    # BUSINESS HEALTH
+    # =====================================
 
     st.markdown("---")
-    st.subheader("🛡 Business Risk Dashboard")
+    st.subheader("🩺 สุขภาพธุรกิจรายด้าน")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric("การเงิน", 88)
+    c2.metric("การตลาด", 76)
+    c3.metric("การดำเนินงาน", 81)
+    c4.metric("การเติบโต", 74)
+
+    # =====================================
+    # RISK DASHBOARD
+    # =====================================
+
+    st.markdown("---")
+    st.subheader("🛡 แผงควบคุมความเสี่ยง")
 
     financial_risk = 100
     marketing_risk = 100
@@ -237,56 +297,31 @@ if st.button("🚀 Analyze Business"):
     if revenue < cost:
         operational_risk -= 50
 
-    c1, c2, c3 = st.columns(3)
+    r1, r2, r3 = st.columns(3)
 
-    c1.metric(
-        "Financial Risk",
-        f"{financial_risk}/100"
-    )
+    r1.metric("ความเสี่ยงด้านการเงิน", financial_risk)
+    r2.metric("ความเสี่ยงด้านการตลาด", marketing_risk)
+    r3.metric("ความเสี่ยงด้านการดำเนินงาน", operational_risk)
 
-    c2.metric(
-        "Marketing Risk",
-        f"{marketing_risk}/100"
-    )
-
-    c3.metric(
-        "Operational Risk",
-        f"{operational_risk}/100"
-    )
-
-    # ==========================================
-    # SURVIVAL SCORE
-    # ==========================================
+    # =====================================
+    # BUSINESS HEALTH INDEX
+    # =====================================
 
     st.markdown("---")
-    st.subheader("📈 ZYRA Survival Score")
+    st.subheader("📈 ดัชนีสุขภาพธุรกิจ")
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=score,
-        title={
-            "text": "Survival Score"
-        },
+        title={"text": "Business Health Index"},
         gauge={
             "axis": {"range": [0, 100]},
-            "bar": {"color": "#198754"},
+            "bar": {"color": "#0B8457"},
             "steps": [
-                {
-                    "range": [0, 40],
-                    "color": "#dc3545"
-                },
-                {
-                    "range": [40, 60],
-                    "color": "#fd7e14"
-                },
-                {
-                    "range": [60, 80],
-                    "color": "#ffc107"
-                },
-                {
-                    "range": [80, 100],
-                    "color": "#198754"
-                }
+                {"range": [0, 40], "color": "#dc3545"},
+                {"range": [40, 60], "color": "#fd7e14"},
+                {"range": [60, 80], "color": "#ffc107"},
+                {"range": [80, 100], "color": "#198754"}
             ]
         }
     ))
@@ -296,78 +331,77 @@ if st.button("🚀 Analyze Business"):
         use_container_width=True
     )
 
-    # ==========================================
+    # =====================================
     # OVERALL STATUS
-    # ==========================================
+    # =====================================
 
-    st.subheader("🎯 Overall Risk Level")
+    st.subheader("🎯 ระดับความเสี่ยงโดยรวม")
 
     if score >= 80:
 
         st.success(
-            "🟢 LOW RISK"
+            "🟢 ความเสี่ยงต่ำ"
         )
 
     elif score >= 60:
 
         st.warning(
-            "🟠 MEDIUM RISK"
+            "🟠 ความเสี่ยงปานกลาง"
         )
 
     else:
 
         st.error(
-            "🔴 HIGH RISK"
+            "🔴 ความเสี่ยงสูง"
         )
 
-    # ==========================================
+    # =====================================
     # EXECUTIVE SUMMARY
-    # ==========================================
+    # =====================================
 
     st.markdown("---")
-    st.subheader("📋 Executive Summary")
+    st.subheader("📋 สรุปสถานะธุรกิจ")
 
     if score >= 80:
 
-        st.success(
-            """
-Business performance is healthy.
+        st.success("""
+ธุรกิจมีผลการดำเนินงานอยู่ในระดับดี
 
-Current risk level is low and growth potential remains strong.
-"""
-        )
+มีความสามารถในการทำกำไรและสภาพคล่องทางการเงินที่เหมาะสม
+สามารถเติบโตต่อได้ภายใต้การติดตามความเสี่ยงอย่างสม่ำเสมอ
+""")
 
     elif score >= 60:
 
-        st.warning(
-            """
-Business performance is stable but requires monitoring.
-"""
-        )
+        st.warning("""
+ธุรกิจยังสามารถดำเนินงานได้ตามปกติ
+
+อย่างไรก็ตาม ควรติดตามปัจจัยเสี่ยงบางประการ
+และวางแผนป้องกันล่วงหน้า
+""")
 
     else:
 
-        st.error(
-            """
-Business is exposed to significant risk.
+        st.error("""
+ธุรกิจมีความเสี่ยงในระดับสูง
 
-Corrective action is recommended immediately.
-"""
-        )
+ควรเร่งปรับปรุงประสิทธิภาพการดำเนินงาน
+และบริหารสภาพคล่องโดยเร็ว
+""")
 
-    # ==========================================
+    # =====================================
     # EARLY WARNING
-    # ==========================================
+    # =====================================
 
     st.markdown("---")
-    st.subheader("⚠️ Early Warning")
+    st.subheader("⚠️ สัญญาณเตือนความเสี่ยง")
 
     risk_found = False
 
     if growth < 0:
 
         st.error(
-            "Customer growth is declining"
+            "อัตราการเติบโตของลูกค้าอยู่ในทิศทางลดลง"
         )
 
         risk_found = True
@@ -375,7 +409,7 @@ Corrective action is recommended immediately.
     if cash < revenue * 0.3:
 
         st.error(
-            "Cash flow risk detected"
+            "เงินสดสำรองต่ำกว่าระดับที่แนะนำ"
         )
 
         risk_found = True
@@ -383,7 +417,7 @@ Corrective action is recommended immediately.
     if revenue < cost:
 
         st.error(
-            "Business is operating at a loss"
+            "ต้นทุนสูงกว่ารายได้"
         )
 
         risk_found = True
@@ -391,67 +425,103 @@ Corrective action is recommended immediately.
     if not risk_found:
 
         st.success(
-            "No significant risk detected"
+            "ยังไม่พบความเสี่ยงที่มีนัยสำคัญ"
         )
 
-    # ==========================================
-    # RECOMMENDATION
-    # ==========================================
+    # =====================================
+    # ROOT CAUSE
+    # =====================================
 
     st.markdown("---")
-    st.subheader("💡 ZYRA Recommendations")
-
-    if growth < 0:
-
-        st.write(
-            "✅ Improve customer retention programs"
-        )
+    st.subheader("🔍 สาเหตุสำคัญของความเสี่ยง")
 
     if cash < revenue * 0.3:
-
-        st.write(
-            "✅ Increase cash reserve"
-        )
+        st.write("• เงินสดสำรองต่ำกว่าระดับที่เหมาะสม")
 
     if revenue < cost:
+        st.write("• ต้นทุนการดำเนินงานสูงกว่ารายได้")
 
-        st.write(
-            "✅ Review pricing strategy and reduce operating costs"
-        )
+    if growth < 0:
+        st.write("• ฐานลูกค้ากำลังลดลง")
 
     if not risk_found:
+        st.write("• ยังไม่พบปัจจัยเสี่ยงที่สำคัญ")
 
-        st.write(
-            "✅ Continue current strategy and monitor performance"
-        )
-
-    # ==========================================
-    # GROWTH OPPORTUNITY
-    # ==========================================
+    # =====================================
+    # RECOMMENDATION
+    # =====================================
 
     st.markdown("---")
-    st.subheader("🚀 Growth Opportunity")
+    st.subheader("💡 แนวทางที่แนะนำ")
+
+    if growth < 0:
+        st.write("✅ จัดทำกิจกรรมรักษาฐานลูกค้า")
+
+    if cash < revenue * 0.3:
+        st.write("✅ เพิ่มเงินสดสำรองสำหรับดำเนินธุรกิจ")
+
+    if revenue < cost:
+        st.write("✅ ปรับปรุงต้นทุนและทบทวนกลยุทธ์ราคา")
+
+    if not risk_found:
+        st.write("✅ ดำเนินธุรกิจตามแผนปัจจุบันและติดตามผลต่อเนื่อง")
+
+    # =====================================
+    # GROWTH OPPORTUNITY
+    # =====================================
+
+    st.markdown("---")
+    st.subheader("🚀 โอกาสในการเติบโต")
 
     if business_type == "Restaurant":
 
         st.info(
-            "Opportunity: Increase repeat customers and optimize food cost."
+            "ควรเพิ่มสัดส่วนลูกค้าประจำและบริหารต้นทุนวัตถุดิบให้มีประสิทธิภาพมากขึ้น"
         )
 
     elif business_type == "Retail":
 
         st.info(
-            "Opportunity: Improve inventory turnover and sales conversion."
+            "ควรเพิ่มอัตราการหมุนเวียนสินค้าและพัฒนาช่องทางการขาย"
         )
 
     elif business_type == "Agriculture":
 
         st.info(
-            "Opportunity: Monitor crop price trends and diversify sales channels."
+            "ควรติดตามแนวโน้มราคาพืชผลและกระจายช่องทางจำหน่าย"
         )
+
+    # =====================================
+    # INDUSTRY BENCHMARK
+    # =====================================
+
+    st.markdown("---")
+
+    st.subheader("🏆 เปรียบเทียบกับค่าเฉลี่ยอุตสาหกรรม")
+
+    if business_type == "Restaurant":
+
+        st.write("""
+- ต้นทุนวัตถุดิบเฉลี่ยอุตสาหกรรม : 35%
+- ธุรกิจที่มีผลการดำเนินงานดี : ต่ำกว่า 35%
+""")
+
+    elif business_type == "Retail":
+
+        st.write("""
+- อัตราหมุนเวียนสินค้าเฉลี่ย : 8 รอบ
+- ธุรกิจที่มีผลการดำเนินงานดี : มากกว่า 10 รอบ
+""")
+
+    elif business_type == "Agriculture":
+
+        st.write("""
+- แนวโน้มราคาพืชผลเฉลี่ย : 0%
+- ค่าบวกสะท้อนแนวโน้มที่ดีขึ้น
+""")
 
     st.markdown("---")
 
     st.caption(
-        "ZYRA Prototype Version 1.0 | SME Early Warning & Survival Intelligence Platform"
+        "ZYRA Business Health Intelligence Platform | Prototype Version 2.0"
     )
