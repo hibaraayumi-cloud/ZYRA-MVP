@@ -170,4 +170,4 @@ st.markdown("---")
 # BUSINESS PROCESS
 # =====================================
 
-st.subheader("⚙️ กระบ
+st.subheader("⚙️ กระบวนการทำงาน")
