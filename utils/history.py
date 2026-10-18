@@ -1,16 +1,21 @@
 import pandas as pd
 from datetime import datetime
 
-FILE_PATH = "data/analysis_history.csv"
+CSV_FILE = "data/analysis_history.csv"
+
 
 def save_analysis(
     business_type,
+    revenue,
+    cost,
+    cash,
+    growth,
     score
 ):
 
     try:
 
-        df = pd.read_csv(FILE_PATH)
+        df = pd.read_csv(CSV_FILE)
 
     except:
 
@@ -18,20 +23,43 @@ def save_analysis(
             columns=[
                 "date",
                 "business_type",
+                "revenue",
+                "cost",
+                "cash",
+                "growth",
                 "score"
             ]
         )
 
     new_row = {
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "business_type": business_type,
-        "score": score
+        "date":
+            datetime.now().strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+
+        "business_type":
+            business_type,
+
+        "revenue":
+            revenue,
+
+        "cost":
+            cost,
+
+        "cash":
+            cash,
+
+        "growth":
+            growth,
+
+        "score":
+            score
     }
 
     df.loc[len(df)] = new_row
 
     df.to_csv(
-        FILE_PATH,
+        CSV_FILE,
         index=False
     )
 
@@ -40,7 +68,9 @@ def load_history():
 
     try:
 
-        return pd.read_csv(FILE_PATH)
+        return pd.read_csv(
+            CSV_FILE
+        )
 
     except:
 
