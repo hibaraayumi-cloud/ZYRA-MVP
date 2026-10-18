@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+from utils.history import load_history
+
 st.set_page_config(
     page_title="Benchmark",
     page_icon="🏆",
@@ -12,101 +14,153 @@ st.title("🏆 เปรียบเทียบกับค่าเฉลี�
 
 st.markdown("""
 เปรียบเทียบผลการดำเนินงานของธุรกิจกับค่าเฉลี่ยในอุตสาหกรรม
-เพื่อระบุจุดแข็ง จุดที่ควรพัฒนา และโอกาสในการแข่งขัน
+
+เพื่อค้นหาจุดแข็ง จุดที่ควรพัฒนา
+และโอกาสในการแข่งขัน
 """)
 
-# ======================================
-# SELECT BUSINESS TYPE
-# ======================================
+# =====================================
+# LOAD DATA
+# =====================================
 
-business_type = st.selectbox(
-    "เลือกประเภทธุรกิจ",
-    [
-        "ร้านอาหาร",
-        "ค้าปลีก",
-        "เกษตรกรรม"
-    ]
-)
+df = load_history()
 
-# ======================================
-# SAMPLE BENCHMARK DATA
-# ======================================
+if df.empty:
 
-if business_type == "ร้านอาหาร":
+    st.warning(
+        """
+ยังไม่มีข้อมูลการวิเคราะห์
 
-    your_data = {
-        "อัตรากำไร (%)": 28,
-        "เงินสดสำรอง": 350,
-        "การเติบโตของลูกค้า": 12
-    }
+กรุณาไปที่เมนู Risk Analysis
+และวิเคราะห์อย่างน้อย 1 ครั้ง
+"""
+    )
 
-    industry_data = {
-        "อัตรากำไร (%)": 18,
-        "เงินสดสำรอง": 180,
-        "การเติบโตของลูกค้า": 5
-    }
+    st.stop()
 
-elif business_type == "ค้าปลีก":
+latest = df.iloc[-1]
 
-    your_data = {
-        "อัตรากำไร (%)": 22,
-        "เงินสดสำรอง": 300,
-        "การเติบโตของลูกค้า": 8
-    }
+business_type = latest["business_type"]
 
-    industry_data = {
-        "อัตรากำไร (%)": 15,
-        "เงินสดสำรอง": 150,
-        "การเติบโตของลูกค้า": 4
-    }
+revenue = float(latest["revenue"])
+
+cost = float(latest["cost"])
+
+cash = float(latest["cash"])
+
+growth = float(latest["growth"])
+
+# =====================================
+# CALCULATE ACTUAL METRICS
+# =====================================
+
+profit = revenue - cost
+
+if revenue > 0:
+
+    profit_margin = (
+        profit / revenue
+    ) * 100
+
+    cash_ratio = (
+        cash / revenue
+    ) * 100
 
 else:
 
-    your_data = {
-        "อัตรากำไร (%)": 20,
-        "เงินสดสำรอง": 250,
-        "การเติบโตของลูกค้า": 10
-    }
+    profit_margin = 0
+    cash_ratio = 0
 
-    industry_data = {
-        "อัตรากำไร (%)": 12,
-        "เงินสดสำรอง": 120,
-        "การเติบโตของลูกค้า": 3
-    }
+# =====================================
+# INDUSTRY BENCHMARK
+# =====================================
 
-# ======================================
-# TABLE
-# ======================================
+if business_type == "Restaurant":
 
-benchmark_df = pd.DataFrame({
-    "ตัวชี้วัด": list(your_data.keys()),
-    "ธุรกิจของคุณ": list(your_data.values()),
-    "ค่าเฉลี่ยอุตสาหกรรม": list(industry_data.values())
-})
+    industry_profit = 18
+    industry_cash = 35
+    industry_growth = 5
+
+elif business_type == "Retail":
+
+    industry_profit = 15
+    industry_cash = 30
+    industry_growth = 4
+
+else:
+
+    industry_profit = 12
+    industry_cash = 25
+    industry_growth = 3
+
+# =====================================
+# BENCHMARK TABLE
+# =====================================
 
 st.subheader("📊 ตารางเปรียบเทียบ")
+
+benchmark_df = pd.DataFrame({
+
+    "ตัวชี้วัด": [
+        "อัตรากำไร (%)",
+        "สัดส่วนเงินสดสำรอง (%)",
+        "การเติบโตของลูกค้า (%)"
+    ],
+
+    "ธุรกิจของคุณ": [
+        round(profit_margin, 1),
+        round(cash_ratio, 1),
+        round(growth, 1)
+    ],
+
+    "ค่าเฉลี่ยอุตสาหกรรม": [
+        industry_profit,
+        industry_cash,
+        industry_growth
+    ]
+})
 
 st.dataframe(
     benchmark_df,
     use_container_width=True
 )
 
-# ======================================
+# =====================================
 # CHART
-# ======================================
+# =====================================
+
+st.markdown("---")
+
+st.subheader("📈 เปรียบเทียบผลการดำเนินงาน")
 
 chart_df = pd.DataFrame({
-    "ตัวชี้วัด":
-        list(your_data.keys()) +
-        list(industry_data.keys()),
 
-    "คะแนน":
-        list(your_data.values()) +
-        list(industry_data.values()),
+    "ตัวชี้วัด": [
+        "อัตรากำไร",
+        "อัตรากำไร",
+        "เงินสดสำรอง",
+        "เงินสดสำรอง",
+        "การเติบโต",
+        "การเติบโต"
+    ],
 
-    "ประเภท":
-        ["ธุรกิจของคุณ"] * 3 +
-        ["ค่าเฉลี่ยอุตสาหกรรม"] * 3
+    "คะแนน": [
+        profit_margin,
+        industry_profit,
+        cash_ratio,
+        industry_cash,
+        growth,
+        industry_growth
+    ],
+
+    "ประเภท": [
+        "ธุรกิจของคุณ",
+        "ค่าเฉลี่ยอุตสาหกรรม",
+        "ธุรกิจของคุณ",
+        "ค่าเฉลี่ยอุตสาหกรรม",
+        "ธุรกิจของคุณ",
+        "ค่าเฉลี่ยอุตสาหกรรม"
+    ]
 })
 
 fig = px.bar(
@@ -121,53 +175,92 @@ fig = px.bar(
     ]
 )
 
+fig.update_layout(
+    height=500
+)
+
 st.plotly_chart(
     fig,
     use_container_width=True
 )
 
-# ======================================
-# INSIGHT
-# ======================================
+# =====================================
+# PERFORMANCE SCORING
+# =====================================
 
 st.markdown("---")
 
-st.subheader("🔍 วิเคราะห์ผล")
+st.subheader("📌 ผลการประเมิน")
 
-for key in your_data:
+score_count = 0
 
-    if your_data[key] > industry_datast.success(
-            f"{key}: สูงกว่าค่าเฉลี่ยอุตสาหกรรม"
-        )
+if profit_margin > industry_profit:
 
-    else:
+    score_count += 1
 
-        st.warning(
-            f"{key}: ต่ำกว่าค่าเฉลี่ยอุตสาหกรรม"
-        )
+    st.success(
+        "อัตรากำไรสูงกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
 
-# ======================================
-# MANAGEMENT VIEW
-# ======================================
+else:
+
+    st.warning(
+        "อัตรากำไรต่ำกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
+
+if cash_ratio > industry_cash:
+
+    score_count += 1
+
+    st.success(
+        "สภาพคล่องสูงกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
+
+else:
+
+    st.warning(
+        "สภาพคล่องต่ำกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
+
+if growth > industry_growth:
+
+    score_count += 1
+
+    st.success(
+        "การเติบโตสูงกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
+
+else:
+
+    st.warning(
+        "การเติบโตต่ำกว่าค่าเฉลี่ยอุตสาหกรรม"
+    )
+
+# =====================================
+# COMPETITIVE POSITION
+# =====================================
 
 st.markdown("---")
 
-st.subheader("📋 ข้อสรุปสำหรับผู้บริหาร")
+st.subheader("🎯 ตำแหน่งทางการแข่งขัน")
 
-better = 0
-
-for key in your_data:
-
-    if your_data[key] > industry_databetter += 1
-
-if better >= 2:
+if score_count == 3:
 
     st.success(
         """
-ธุรกิจมีผลการดำเนินงานสูงกว่าค่าเฉลี่ยอุตสาหกรรม
+ธุรกิจมีผลการดำเนินงานเหนือกว่าค่าเฉลี่ยอุตสาหกรรมในทุกด้าน
 
-สามารถใช้จุดแข็งดังกล่าวเป็นฐานในการขยายธุรกิจ
-และเพิ่มความสามารถในการแข่งขันในระยะยาว
+ถือเป็นจุดแข็งสำคัญในการแข่งขัน
+"""
+    )
+
+elif score_count >= 2:
+
+    st.info(
+        """
+ธุรกิจมีผลการดำเนินงานดีกว่าค่าเฉลี่ยอุตสาหกรรมในหลายด้าน
+
+ยังมีโอกาสพัฒนาบางส่วนเพิ่มเติม
 """
     )
 
@@ -175,9 +268,41 @@ else:
 
     st.warning(
         """
-ธุรกิจยังมีตัวชี้วัดบางส่วนต่ำกว่าค่าเฉลี่ยอุตสาหกรรม
+ธุรกิจยังมีผลการดำเนินงานต่ำกว่าค่าเฉลี่ยอุตสาหกรรมหลายด้าน
 
-ควรให้ความสำคัญกับการเพิ่มประสิทธิภาพการดำเนินงาน
-และปรับปรุงความสามารถในการทำกำไร
+ควรวางแผนปรับปรุงเพื่อเพิ่มความสามารถในการแข่งขัน
 """
     )
+
+# =====================================
+# MANAGEMENT SUMMARY
+# =====================================
+
+st.markdown("---")
+
+st.subheader("📋 สรุปสำหรับผู้บริหาร")
+
+st.info(
+f"""
+ประเภทธุรกิจ : {business_type}
+
+อัตรากำไรปัจจุบัน : {profit_margin:.1f}%
+
+สภาพคล่องปัจจุบัน : {cash_ratio:.1f}%
+
+อัตราการเติบโตของลูกค้า : {growth:.1f}%
+
+ผลการวิเคราะห์แสดงให้เห็นว่าธุรกิจมีความสามารถในการแข่งขันในระดับที่สามารถต่อยอดได้
+โดยควรติดตามตัวชี้วัดที่ยังต่ำกว่าค่าเฉลี่ยอุตสาหกรรมอย่างใกล้ชิด
+"""
+)
+
+# =====================================
+# FOOTER
+# =====================================
+
+st.markdown("---")
+
+st.caption(
+    "ZYRA Industry Benchmark Engine | Connected to Real Business Data"
+)
